@@ -3,19 +3,22 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { auth } from './lib/auth'
+import clientsRouter from './routes/clients'
 
 const app = new Hono()
 
-// Permitir peticiones del frontend
 app.use('*', cors({
     origin: 'http://localhost:5173',
     credentials: true,
 }))
 
-// Rutas de autenticación (login, registro, sesión, etc.)
+// Rutas de autenticación
 app.on(['POST', 'GET'], '/api/auth/**', (c) => {
     return auth.handler(c.req.raw)
 })
+
+// Rutas de clientes
+app.route('/api/clients', clientsRouter)
 
 // Ruta de prueba
 app.get('/', (c) => {

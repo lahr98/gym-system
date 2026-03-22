@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
+import ClientsPage from '@/pages/ClientsPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import DashboardLayout from '@/layouts/DashboardLayout'
 
@@ -16,6 +17,16 @@ function App() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <DashboardPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/clients"
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ClientsPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }
