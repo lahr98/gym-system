@@ -88,3 +88,13 @@ export const payments = pgTable('payments', {
     notes: text('notes'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+// ============================================
+// Check-ins (Control de acceso)
+// ============================================
+
+export const checkIns = pgTable('check_ins', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    clientId: uuid('client_id').notNull().references(() => clients.id),
+    branchId: uuid('branch_id').references(() => branches.id),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+})

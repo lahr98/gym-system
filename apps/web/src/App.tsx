@@ -7,6 +7,7 @@ import MembershipsPage from '@/pages/MembershipsPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import PaymentsPage from '@/pages/PaymentsPage'
+import CheckInPage from '@/pages/CheckInPage'
 
 function App() {
     return (
@@ -60,6 +61,16 @@ function App() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <PaymentsPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/checkin"
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <CheckInPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

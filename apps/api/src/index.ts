@@ -6,6 +6,7 @@ import { auth } from './lib/auth'
 import clientsRouter from './routes/clients'
 import membershipsRouter from './routes/memberships'
 import paymentsRouter from './routes/payments'
+import checkinsRouter from './routes/checkins'
 
 const app = new Hono()
 
@@ -21,6 +22,7 @@ app.on(['POST', 'GET'], '/api/auth/**', (c) => {
 app.route('/api/clients', clientsRouter)
 app.route('/api/memberships', membershipsRouter)
 app.route('/api/payments', paymentsRouter)
+app.route('/api/checkins', checkinsRouter)
 
 app.get('/', (c) => {
     return c.json({ message: 'Gym System API is running' })
