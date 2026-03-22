@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import DashboardLayout from '@/layouts/DashboardLayout'
 
 function App() {
     return (
@@ -13,7 +14,9 @@ function App() {
                     path="/dashboard"
                     element={
                         <ProtectedRoute>
-                            <DashboardPage />
+                            <DashboardLayout>
+                                <DashboardPage />
+                            </DashboardLayout>
                         </ProtectedRoute>
                     }
                 />
