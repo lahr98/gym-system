@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,7 @@ import {
 } from '@/services/clients'
 
 export default function ClientsPage() {
+    const navigate = useNavigate()
     const [clients, setClients] = useState<Client[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
@@ -52,10 +54,10 @@ export default function ClientsPage() {
         setSaving(true)
 
         try {
-            await createClient(form)
-            setForm({ firstName: '', lastName: '', email: '', phone: '' })
-            setShowForm(false)
-            await loadClients()
+            const newClient = await createClient(form)
+            navigate(`/clients/${newClient.id}?assign=true`,{
+                state: { cliente: newClient }
+            })
         } catch (err) {
             console.error(err)
         } finally {
@@ -167,8 +169,19 @@ export default function ClientsPage() {
                         {filtered.map((client) => (
                             <TableRow key={client.id}>
                                 <TableCell className="font-medium">
+
+                                    <a href={`/clients/${client.id}`}
+                                    onClick={(e) => {
+                                    e.preventDefault()
+                                    navigate(`/clients/${client.id}`,{
+                                        state: {client }
+                                    })
+                                }}
+                                    className="text-primary underline hover:no-underline cursor-pointer"
+                                    >
                                     {client.firstName} {client.lastName}
-                                </TableCell>
+                                </a>
+                            </TableCell>
                                 <TableCell>{client.email ?? '—'}</TableCell>
                                 <TableCell>{client.phone ?? '—'}</TableCell>
                                 <TableCell>

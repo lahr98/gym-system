@@ -11,6 +11,27 @@ export interface Client {
     createdAt: string
 }
 
+export interface ClientProfile {
+    client: Client
+    membership: {
+        id: string
+        planName: string | null
+        planPrice: number | null
+        multiBranch: boolean
+        startDate: string
+        endDate: string
+        branchName: string | null
+    } | null
+    payments: {
+        id: string
+        amount: number
+        method: string
+        notes: string | null
+        createdAt: string
+        branchName: string | null
+    }[]
+}
+
 export interface CreateClientData {
     firstName: string
     lastName: string
@@ -21,6 +42,12 @@ export interface CreateClientData {
 export async function getClients(): Promise<Client[]> {
     const res = await fetch(`${API_URL}/clients`, { credentials: 'include' })
     if (!res.ok) throw new Error('Error al obtener clientes')
+    return res.json()
+}
+
+export async function getClientProfile(id: string): Promise<ClientProfile> {
+    const res = await fetch(`${API_URL}/clients/${id}`, { credentials: 'include' })
+    if (!res.ok) throw new Error('Error al obtener perfil')
     return res.json()
 }
 

@@ -72,3 +72,19 @@ export const memberships = pgTable('memberships', {
     isActive: boolean('is_active').notNull().default(true),
     createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+// ============================================
+// Payments (Pagos)
+// ============================================
+
+export const payments = pgTable('payments', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    clientId: uuid('client_id').notNull().references(() => clients.id),
+    membershipId: uuid('membership_id').references(() => memberships.id),
+    amount: integer('amount').notNull(),
+    method: paymentMethodEnum('method').notNull(),
+    branchId: uuid('branch_id').references(() => branches.id),
+    receivedBy: text('received_by'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+})

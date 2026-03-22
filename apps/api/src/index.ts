@@ -5,6 +5,7 @@ import { cors } from 'hono/cors'
 import { auth } from './lib/auth'
 import clientsRouter from './routes/clients'
 import membershipsRouter from './routes/memberships'
+import paymentsRouter from './routes/payments'
 
 const app = new Hono()
 
@@ -13,16 +14,14 @@ app.use('*', cors({
     credentials: true,
 }))
 
-// Rutas de autenticación
 app.on(['POST', 'GET'], '/api/auth/**', (c) => {
     return auth.handler(c.req.raw)
 })
 
-// Rutas de la API
 app.route('/api/clients', clientsRouter)
 app.route('/api/memberships', membershipsRouter)
+app.route('/api/payments', paymentsRouter)
 
-// Ruta de prueba
 app.get('/', (c) => {
     return c.json({ message: 'Gym System API is running' })
 })

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ClientsPage from '@/pages/ClientsPage'
+import ClientProfilePage from '@/pages/ClientProfilePage'
 import MembershipsPage from '@/pages/MembershipsPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import DashboardLayout from '@/layouts/DashboardLayout'
@@ -28,6 +29,16 @@ function App() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <ClientsPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/clients/:id"
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <ClientProfilePage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }
