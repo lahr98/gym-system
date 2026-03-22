@@ -6,6 +6,7 @@ import ClientProfilePage from '@/pages/ClientProfilePage'
 import MembershipsPage from '@/pages/MembershipsPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import DashboardLayout from '@/layouts/DashboardLayout'
+import PaymentsPage from '@/pages/PaymentsPage'
 
 function App() {
     return (
@@ -49,6 +50,16 @@ function App() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <MembershipsPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/payments"
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <PaymentsPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }
