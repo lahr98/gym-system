@@ -2,7 +2,9 @@ const API_URL = 'http://localhost:3000/api'
 
 export interface Membership {
     id: string
-    type: 'monthly' | 'biweekly' | 'daily' | 'annual'
+    planId: string | null
+    planName: string | null
+    planPrice: number | null
     multiBranch: boolean
     startDate: string
     endDate: string
@@ -15,6 +17,15 @@ export interface Membership {
     branchName: string | null
 }
 
+export interface MembershipPlan {
+    id: string
+    name: string
+    durationDays: number
+    price: number
+    multiBranch: boolean
+    isActive: boolean
+}
+
 export interface Branch {
     id: string
     name: string
@@ -23,15 +34,20 @@ export interface Branch {
 
 export interface CreateMembershipData {
     clientId: string
-    type: string
+    planId: string
     branchId?: string
-    multiBranch?: boolean
     startDate: string
 }
 
 export async function getMemberships(): Promise<Membership[]> {
     const res = await fetch(`${API_URL}/memberships`, { credentials: 'include' })
     if (!res.ok) throw new Error('Error al obtener membresías')
+    return res.json()
+}
+
+export async function getPlans(): Promise<MembershipPlan[]> {
+    const res = await fetch(`${API_URL}/memberships/plans`, { credentials: 'include' })
+    if (!res.ok) throw new Error('Error al obtener planes')
     return res.json()
 }
 

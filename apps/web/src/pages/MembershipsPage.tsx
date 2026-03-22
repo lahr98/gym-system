@@ -8,42 +8,43 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import {
-    getMemberships, getBranches, createMembership,
-    deleteMembership, type Membership, type Branch,
+    getMemberships, getPlans, getBranches, createMembership,
+    deleteMembership, type Membership, type MembershipPlan, type Branch,
 } from '@/services/memberships'
 import { getClients, type Client } from '@/services/clients'
 
-const typeLabels: Record<string, string> = {
-    daily: 'Pase del día',
-    biweekly: 'Quincenal',
-    monthly: 'Mensual',
-    annual: 'Anual',
+function formatPrice(cents: number): string {
+    return `$${(cents / 100).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
 }
 
 export default function MembershipsPage() {
     const [memberships, setMemberships] = useState<Membership[]>([])
     const [clients, setClients] = useState<Client[]>([])
+    const [plans, setPlans] = useState<MembershipPlan[]>([])
     const [branches, setBranches] = useState<Branch[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [saving, setSaving] = useState(false)
     const [form, setForm] = useState({
         clientId: '',
-        type: 'monthly',
+        planId: '',
         branchId: '',
-        multiBranch: false,
         startDate: new Date().toISOString().split('T')[0],
     })
 
+    const selectedPlan = plans.find((p) => p.id === form.planId)
+
     const loadData = async () => {
         try {
-            const [m, c, b] = await Promise.all([
+            const [m, c, p, b] = await Promise.all([
                 getMemberships(),
                 getClients(),
+                getPlans(),
                 getBranches(),
             ])
             setMemberships(m)
             setClients(c)
+            setPlans(p)
             setBranches(b)
         } catch (err) {
             console.error(err)
@@ -57,22 +58,21 @@ export default function MembershipsPage() {
     }, [])
 
     const handleSubmit = async () => {
-        if (!form.clientId || !form.type) return
+        if (!form.clientId || !form.planId) return
+        if (!selectedPlan?.multiBranch && !form.branchId) return
         setSaving(true)
 
         try {
             await createMembership({
                 clientId: form.clientId,
-                type: form.type,
-                branchId: form.multiBranch ? undefined : form.branchId || undefined,
-                multiBranch: form.multiBranch,
+                planId: form.planId,
+                branchId: selectedPlan?.multiBranch ? undefined : form.branchId,
                 startDate: form.startDate,
             })
             setForm({
                 clientId: '',
-                type: 'monthly',
+                planId: '',
                 branchId: '',
-                multiBranch: false,
                 startDate: new Date().toISOString().split('T')[0],
             })
             setShowForm(false)
@@ -133,16 +133,18 @@ export default function MembershipsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Tipo de plan *</Label>
+                                <Label>Plan *</Label>
                                 <select
-                                    value={form.type}
-                                    onChange={(e) => setForm({ ...form, type: e.target.value })}
+                                    value={form.planId}
+                                    onChange={(e) => setForm({ ...form, planId: e.target.value })}
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 >
-                                    <option value="daily">Pase del día</option>
-                                    <option value="biweekly">Quincenal</option>
-                                    <option value="monthly">Mensual</option>
-                                    <option value="annual">Anual</option>
+                                    <option value="">Seleccionar plan</option>
+                                    {plans.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name} — {formatPrice(p.price)} ({p.durationDays} días)
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
@@ -155,27 +157,38 @@ export default function MembershipsPage() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Sucursal</Label>
-                                <select
-                                    value={form.multiBranch ? 'multi' : form.branchId}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'multi') {
-                                            setForm({ ...form, multiBranch: true, branchId: '' })
-                                        } else {
-                                            setForm({ ...form, multiBranch: false, branchId: e.target.value })
-                                        }
-                                    }}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                >
-                                    <option value="">Seleccionar sucursal</option>
-                                    {branches.map((b) => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                    ))}
-                                    <option value="multi">Ambas sucursales</option>
-                                </select>
-                            </div>
+                            {selectedPlan && !selectedPlan.multiBranch && (
+                                <div className="space-y-2">
+                                    <Label>Sucursal *</Label>
+                                    <select
+                                        value={form.branchId}
+                                        onChange={(e) => setForm({ ...form, branchId: e.target.value })}
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    >
+                                        <option value="">Seleccionar sucursal</option>
+                                        {branches.map((b) => (
+                                            <option key={b.id} value={b.id}>{b.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {selectedPlan?.multiBranch && (
+                                <div className="flex items-end">
+                                    <p className="text-sm text-muted-foreground">
+                                        Este plan incluye acceso a ambas sucursales.
+                                    </p>
+                                </div>
+                            )}
                         </div>
+
+                        {selectedPlan && (
+                            <div className="mt-4 p-3 rounded-md bg-accent">
+                                <p className="text-sm font-medium">
+                                    Resumen: {selectedPlan.name} — {formatPrice(selectedPlan.price)} — {selectedPlan.durationDays} días
+                                </p>
+                            </div>
+                        )}
 
                         <Button className="mt-4" onClick={handleSubmit} disabled={saving}>
                             {saving ? 'Guardando...' : 'Asignar membresía'}
@@ -192,6 +205,7 @@ export default function MembershipsPage() {
                         <TableRow>
                             <TableHead>Cliente</TableHead>
                             <TableHead>Plan</TableHead>
+                            <TableHead>Precio</TableHead>
                             <TableHead>Sucursal</TableHead>
                             <TableHead>Inicio</TableHead>
                             <TableHead>Vencimiento</TableHead>
@@ -205,7 +219,8 @@ export default function MembershipsPage() {
                                 <TableCell className="font-medium">
                                     {m.clientFirstName} {m.clientLastName}
                                 </TableCell>
-                                <TableCell>{typeLabels[m.type]}</TableCell>
+                                <TableCell>{m.planName ?? '—'}</TableCell>
+                                <TableCell>{m.planPrice ? formatPrice(m.planPrice) : '—'}</TableCell>
                                 <TableCell>{m.multiBranch ? 'Ambas' : m.branchName ?? '—'}</TableCell>
                                 <TableCell>
                                     {new Date(m.startDate).toLocaleDateString('es-MX')}

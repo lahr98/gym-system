@@ -14,8 +14,6 @@ export const db = drizzle(client)
 // Enums
 // ============================================
 
-export const membershipTypeEnum = pgEnum('membership_type', ['monthly', 'biweekly', 'daily', 'annual'])
-
 export const paymentMethodEnum = pgEnum('payment_method', ['cash', 'transfer', 'card'])
 
 // ============================================
@@ -46,13 +44,27 @@ export const clients = pgTable('clients', {
 })
 
 // ============================================
-// Memberships
+// Membership Plans (Catálogo de planes)
+// ============================================
+
+export const membershipPlans = pgTable('membership_plans', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    durationDays: integer('duration_days').notNull(),
+    price: integer('price').notNull(),
+    multiBranch: boolean('multi_branch').notNull().default(false),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// ============================================
+// Memberships (Membresías asignadas)
 // ============================================
 
 export const memberships = pgTable('memberships', {
     id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id').notNull().references(() => clients.id),
-    type: membershipTypeEnum('type').notNull(),
+    planId: uuid('plan_id').references(() => membershipPlans.id),
     branchId: uuid('branch_id').references(() => branches.id),
     multiBranch: boolean('multi_branch').notNull().default(false),
     startDate: timestamp('start_date').notNull(),

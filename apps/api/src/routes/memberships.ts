@@ -1,15 +1,17 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
-import { db, memberships, clients, branches } from '../db'
+import { db, memberships, membershipPlans, clients, branches } from '../db'
 
 const membershipsRouter = new Hono()
 
-// Obtener todas las membresías activas con datos del cliente
+// Obtener todas las membresías activas
 membershipsRouter.get('/', async (c) => {
     const all = await db
         .select({
             id: memberships.id,
-            type: memberships.type,
+            planId: memberships.planId,
+            planName: membershipPlans.name,
+            planPrice: membershipPlans.price,
             multiBranch: memberships.multiBranch,
             startDate: memberships.startDate,
             endDate: memberships.endDate,
@@ -24,9 +26,20 @@ membershipsRouter.get('/', async (c) => {
         .from(memberships)
         .leftJoin(clients, eq(memberships.clientId, clients.id))
         .leftJoin(branches, eq(memberships.branchId, branches.id))
+        .leftJoin(membershipPlans, eq(memberships.planId, membershipPlans.id))
         .where(eq(memberships.isActive, true))
         .orderBy(memberships.createdAt)
 
+    return c.json(all)
+})
+
+// Obtener planes activos (para el formulario)
+membershipsRouter.get('/plans', async (c) => {
+    const all = await db
+        .select()
+        .from(membershipPlans)
+        .where(eq(membershipPlans.isActive, true))
+        .orderBy(membershipPlans.price)
     return c.json(all)
 })
 
@@ -43,37 +56,27 @@ membershipsRouter.get('/branches', async (c) => {
 membershipsRouter.post('/', async (c) => {
     const body = await c.req.json()
 
-    const startDate = new Date(body.startDate)
-    let endDate: Date
+    // Buscar el plan para obtener la duración
+    const [plan] = await db
+        .select()
+        .from(membershipPlans)
+        .where(eq(membershipPlans.id, body.planId))
 
-    switch (body.type) {
-        case 'daily':
-            endDate = new Date(startDate)
-            endDate.setDate(endDate.getDate() + 1)
-            break
-        case 'biweekly':
-            endDate = new Date(startDate)
-            endDate.setDate(endDate.getDate() + 15)
-            break
-        case 'monthly':
-            endDate = new Date(startDate)
-            endDate.setMonth(endDate.getMonth() + 1)
-            break
-        case 'annual':
-            endDate = new Date(startDate)
-            endDate.setFullYear(endDate.getFullYear() + 1)
-            break
-        default:
-            return c.json({ error: 'Tipo de membresía inválido' }, 400)
+    if (!plan) {
+        return c.json({ error: 'Plan no encontrado' }, 404)
     }
+
+    const startDate = new Date(body.startDate)
+    const endDate = new Date(startDate)
+    endDate.setDate(endDate.getDate() + plan.durationDays)
 
     const [newMembership] = await db
         .insert(memberships)
         .values({
             clientId: body.clientId,
-            type: body.type,
-            branchId: body.branchId || null,
-            multiBranch: body.multiBranch || false,
+            planId: body.planId,
+            branchId: plan.multiBranch ? null : (body.branchId || null),
+            multiBranch: plan.multiBranch,
             startDate,
             endDate,
         })
