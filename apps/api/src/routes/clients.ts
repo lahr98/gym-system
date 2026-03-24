@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { eq, desc } from 'drizzle-orm'
 import { db, clients, memberships, membershipPlans, payments, branches } from '../db'
 import { requireAuth, requireRole } from '../middleware/auth'
+import { createClientSchema, updateClientSchema } from '../validators'
+import { validateBody } from '../validators/validate'
 
 const clientsRouter = new Hono()
 
@@ -71,15 +73,16 @@ clientsRouter.get('/:id', requireRole('owner', 'receptionist'), async (c) => {
 
 // Crear cliente (dueño y recepcionista)
 clientsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
-    const body = await c.req.json()
+    const data = await validateBody(c, createClientSchema)
+    if (!data) return c.res
 
     const [newClient] = await db
         .insert(clients)
         .values({
-            firstName: body.firstName,
-            lastName: body.lastName,
-            email: body.email || null,
-            phone: body.phone || null,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email || null,
+            phone: data.phone || null,
         })
         .returning()
 
@@ -89,15 +92,16 @@ clientsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
 // Actualizar cliente (dueño y recepcionista)
 clientsRouter.put('/:id', requireRole('owner', 'receptionist'), async (c) => {
     const id = c.req.param('id')
-    const body = await c.req.json()
+    const data = await validateBody(c, updateClientSchema)
+    if (!data) return c.res
 
     const [updated] = await db
         .update(clients)
         .set({
-            firstName: body.firstName,
-            lastName: body.lastName,
-            email: body.email || null,
-            phone: body.phone || null,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email || null,
+            phone: data.phone || null,
         })
         .where(eq(clients.id, id))
         .returning()

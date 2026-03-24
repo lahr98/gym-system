@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { eq, desc, and, gte } from 'drizzle-orm'
 import { db, clients, memberships, membershipPlans, checkIns, branches } from '../db'
 import { requireAuth, requireRole } from '../middleware/auth'
+import { createCheckInSchema } from '../validators'
+import { validateBody } from '../validators/validate'
 
 const checkinsRouter = new Hono()
 
@@ -33,8 +35,10 @@ checkinsRouter.get('/', requireRole('owner', 'receptionist'), async (c) => {
 // Verificar membresía y registrar check-in
 // Dueño y recepcionista registran check-ins
 checkinsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
-    const body = await c.req.json()
-    const { clientId, branchId } = body
+    const data = await validateBody(c, createCheckInSchema)
+    if (!data) return c.res
+
+    const { clientId, branchId } = data
 
     // Verificar que el cliente existe
     const [client] = await db

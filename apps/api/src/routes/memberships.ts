@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
 import { db, memberships, membershipPlans, clients, branches } from '../db'
 import { requireAuth, requireRole } from '../middleware/auth'
+import { createMembershipSchema } from '../validators'
+import { validateBody } from '../validators/validate'
 
 const membershipsRouter = new Hono()
 
@@ -57,27 +59,28 @@ membershipsRouter.get('/branches', requireRole('owner', 'receptionist'), async (
 
 // Crear membresía
 membershipsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
-    const body = await c.req.json()
+    const data = await validateBody(c, createMembershipSchema)
+    if (!data) return c.res
 
     const [plan] = await db
         .select()
         .from(membershipPlans)
-        .where(eq(membershipPlans.id, body.planId))
+        .where(eq(membershipPlans.id, data.planId))
 
     if (!plan) {
         return c.json({ error: 'Plan no encontrado' }, 404)
     }
 
-    const startDate = new Date(body.startDate)
+    const startDate = new Date(data.startDate)
     const endDate = new Date(startDate)
     endDate.setDate(endDate.getDate() + plan.durationDays)
 
     const [newMembership] = await db
         .insert(memberships)
         .values({
-            clientId: body.clientId,
-            planId: body.planId,
-            branchId: plan.multiBranch ? null : (body.branchId || null),
+            clientId: data.clientId,
+            planId: data.planId,
+            branchId: plan.multiBranch ? null : (data.branchId || null),
             multiBranch: plan.multiBranch,
             startDate,
             endDate,

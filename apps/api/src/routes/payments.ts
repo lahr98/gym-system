@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { eq, desc } from 'drizzle-orm'
 import { db, payments, clients, branches } from '../db'
 import { requireAuth, requireRole } from '../middleware/auth'
+import { createPaymentSchema } from '../validators'
+import { validateBody } from '../validators/validate'
 
 const paymentsRouter = new Hono()
 
@@ -31,18 +33,19 @@ paymentsRouter.get('/', requireRole('owner'), async (c) => {
 
 // Registrar un pago (dueño y recepcionista)
 paymentsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
-    const body = await c.req.json()
+    const data = await validateBody(c, createPaymentSchema)
+    if (!data) return c.res
 
     const [newPayment] = await db
         .insert(payments)
         .values({
-            clientId: body.clientId,
-            membershipId: body.membershipId || null,
-            amount: body.amount,
-            method: body.method,
-            branchId: body.branchId || null,
-            receivedBy: body.receivedBy || null,
-            notes: body.notes || null,
+            clientId: data.clientId,
+            membershipId: data.membershipId || null,
+            amount: data.amount,
+            method: data.method,
+            branchId: data.branchId || null,
+            receivedBy: data.receivedBy || null,
+            notes: data.notes || null,
         })
         .returning()
 
