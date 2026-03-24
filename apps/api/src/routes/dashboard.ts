@@ -1,10 +1,14 @@
 import { Hono } from 'hono'
-import { eq, gte, and, desc, count, sum } from 'drizzle-orm'
+import { eq, gte, desc, count } from 'drizzle-orm'
 import { db, clients, memberships, membershipPlans, payments, checkIns, branches } from '../db'
+import { requireAuth, requireRole } from '../middleware/auth'
 
 const dashboardRouter = new Hono()
 
-dashboardRouter.get('/', async (c) => {
+dashboardRouter.use('*', requireAuth)
+
+// Solo dueño ve el dashboard completo
+dashboardRouter.get('/', requireRole('owner'), async (c) => {
     const now = new Date()
     const todayStart = new Date(now)
     todayStart.setHours(0, 0, 0, 0)

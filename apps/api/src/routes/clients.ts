@@ -1,11 +1,15 @@
 import { Hono } from 'hono'
 import { eq, desc } from 'drizzle-orm'
 import { db, clients, memberships, membershipPlans, payments, branches } from '../db'
+import { requireAuth, requireRole } from '../middleware/auth'
 
 const clientsRouter = new Hono()
 
-// Obtener todos los clientes activos
-clientsRouter.get('/', async (c) => {
+// Todas las rutas requieren autenticación
+clientsRouter.use('*', requireAuth)
+
+// Obtener todos los clientes activos (dueño y recepcionista)
+clientsRouter.get('/', requireRole('owner', 'receptionist'), async (c) => {
     const allClients = await db
         .select()
         .from(clients)
@@ -14,11 +18,10 @@ clientsRouter.get('/', async (c) => {
     return c.json(allClients)
 })
 
-// Obtener perfil completo de un cliente
-clientsRouter.get('/:id', async (c) => {
+// Obtener perfil completo (dueño y recepcionista)
+clientsRouter.get('/:id', requireRole('owner', 'receptionist'), async (c) => {
     const id = c.req.param('id')
 
-    // Datos del cliente
     const [client] = await db
         .select()
         .from(clients)
@@ -28,7 +31,6 @@ clientsRouter.get('/:id', async (c) => {
         return c.json({ error: 'Cliente no encontrado' }, 404)
     }
 
-    // Membresía activa
     const activeMembership = await db
         .select({
             id: memberships.id,
@@ -46,7 +48,6 @@ clientsRouter.get('/:id', async (c) => {
         .orderBy(desc(memberships.createdAt))
         .limit(1)
 
-    // Historial de pagos
     const paymentHistory = await db
         .select({
             id: payments.id,
@@ -68,8 +69,8 @@ clientsRouter.get('/:id', async (c) => {
     })
 })
 
-// Crear un nuevo cliente
-clientsRouter.post('/', async (c) => {
+// Crear cliente (dueño y recepcionista)
+clientsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
     const body = await c.req.json()
 
     const [newClient] = await db
@@ -85,8 +86,8 @@ clientsRouter.post('/', async (c) => {
     return c.json(newClient, 201)
 })
 
-// Actualizar un cliente
-clientsRouter.put('/:id', async (c) => {
+// Actualizar cliente (dueño y recepcionista)
+clientsRouter.put('/:id', requireRole('owner', 'receptionist'), async (c) => {
     const id = c.req.param('id')
     const body = await c.req.json()
 
@@ -108,8 +109,8 @@ clientsRouter.put('/:id', async (c) => {
     return c.json(updated)
 })
 
-// Desactivar un cliente
-clientsRouter.delete('/:id', async (c) => {
+// Desactivar cliente (solo dueño)
+clientsRouter.delete('/:id', requireRole('owner'), async (c) => {
     const id = c.req.param('id')
 
     const [deactivated] = await db

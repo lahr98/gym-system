@@ -1,11 +1,14 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
 import { db, memberships, membershipPlans, clients, branches } from '../db'
+import { requireAuth, requireRole } from '../middleware/auth'
 
 const membershipsRouter = new Hono()
 
+membershipsRouter.use('*', requireAuth)
+
 // Obtener todas las membresías activas
-membershipsRouter.get('/', async (c) => {
+membershipsRouter.get('/', requireRole('owner', 'receptionist'), async (c) => {
     const all = await db
         .select({
             id: memberships.id,
@@ -33,8 +36,8 @@ membershipsRouter.get('/', async (c) => {
     return c.json(all)
 })
 
-// Obtener planes activos (para el formulario)
-membershipsRouter.get('/plans', async (c) => {
+// Obtener planes activos
+membershipsRouter.get('/plans', requireRole('owner', 'receptionist'), async (c) => {
     const all = await db
         .select()
         .from(membershipPlans)
@@ -43,8 +46,8 @@ membershipsRouter.get('/plans', async (c) => {
     return c.json(all)
 })
 
-// Obtener sucursales (para el formulario)
-membershipsRouter.get('/branches', async (c) => {
+// Obtener sucursales
+membershipsRouter.get('/branches', requireRole('owner', 'receptionist'), async (c) => {
     const all = await db
         .select()
         .from(branches)
@@ -53,10 +56,9 @@ membershipsRouter.get('/branches', async (c) => {
 })
 
 // Crear membresía
-membershipsRouter.post('/', async (c) => {
+membershipsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
     const body = await c.req.json()
 
-    // Buscar el plan para obtener la duración
     const [plan] = await db
         .select()
         .from(membershipPlans)
@@ -85,8 +87,8 @@ membershipsRouter.post('/', async (c) => {
     return c.json(newMembership, 201)
 })
 
-// Desactivar membresía
-membershipsRouter.delete('/:id', async (c) => {
+// Desactivar membresía (solo dueño)
+membershipsRouter.delete('/:id', requireRole('owner'), async (c) => {
     const id = c.req.param('id')
 
     const [deactivated] = await db

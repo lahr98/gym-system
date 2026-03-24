@@ -1,11 +1,14 @@
 import { Hono } from 'hono'
 import { eq, desc, and, gte } from 'drizzle-orm'
 import { db, clients, memberships, membershipPlans, checkIns, branches } from '../db'
+import { requireAuth, requireRole } from '../middleware/auth'
 
 const checkinsRouter = new Hono()
 
-// Obtener check-ins del día
-checkinsRouter.get('/', async (c) => {
+checkinsRouter.use('*', requireAuth)
+
+// Dueño y recepcionista ven check-ins
+checkinsRouter.get('/', requireRole('owner', 'receptionist'), async (c) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -28,7 +31,8 @@ checkinsRouter.get('/', async (c) => {
 })
 
 // Verificar membresía y registrar check-in
-checkinsRouter.post('/', async (c) => {
+// Dueño y recepcionista registran check-ins
+checkinsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
     const body = await c.req.json()
     const { clientId, branchId } = body
 

@@ -1,11 +1,14 @@
 import { Hono } from 'hono'
 import { eq, desc } from 'drizzle-orm'
 import { db, payments, clients, branches } from '../db'
+import { requireAuth, requireRole } from '../middleware/auth'
 
 const paymentsRouter = new Hono()
 
-// Obtener todos los pagos
-paymentsRouter.get('/', async (c) => {
+paymentsRouter.use('*', requireAuth)
+
+// Obtener todos los pagos (solo dueño)
+paymentsRouter.get('/', requireRole('owner'), async (c) => {
     const all = await db
         .select({
             id: payments.id,
@@ -26,8 +29,8 @@ paymentsRouter.get('/', async (c) => {
     return c.json(all)
 })
 
-// Registrar un pago
-paymentsRouter.post('/', async (c) => {
+// Registrar un pago (dueño y recepcionista)
+paymentsRouter.post('/', requireRole('owner', 'receptionist'), async (c) => {
     const body = await c.req.json()
 
     const [newPayment] = await db
