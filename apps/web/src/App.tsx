@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import PaymentsPage from '@/pages/PaymentsPage'
 import CheckInPage from '@/pages/CheckInPage'
+import PlansPage from '@/pages/PlansPage'
 
 function App() {
     return (
@@ -71,6 +72,16 @@ function App() {
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <CheckInPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/plans"
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <PlansPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

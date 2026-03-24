@@ -11,6 +11,7 @@ const navigation = [
     { name: 'Membresías', path: '/memberships', roles: ['owner', 'receptionist'] },
     { name: 'Pagos', path: '/payments', roles: ['owner', 'receptionist'] },
     { name: 'Check-in', path: '/checkin', roles: ['owner', 'receptionist'] },
+    { name: 'Planes', path: '/plans', roles: ['owner'] },
     { name: 'Clases', path: '/classes', roles: ['owner', 'trainer'] },
 ]
 
