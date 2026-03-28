@@ -27,7 +27,6 @@ export default function ClientProfilePage() {
     const navigate = useNavigate()
     const location = useLocation()
     const passedClient = (location.state as { client?: ClientProfile['client'] })?.client
-    console.log('passedClient:', passedClient)
 
     const [profile, setProfile] = useState<ClientProfile | null>(
         passedClient ? { client: passedClient, membership: null, payments: [] } : null
