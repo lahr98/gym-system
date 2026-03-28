@@ -99,3 +99,18 @@ export const checkIns = pgTable('check_ins', {
     branchId: uuid('branch_id').references(() => branches.id),
     createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+// ============================================
+// Users (Better Auth - staff del gym)
+// ============================================
+
+export const users = pgTable('user', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  emailVerified: boolean('email_verified').default(false).notNull(),
+  image: text('image'),
+  role: text('role').notNull().default('receptionist'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})

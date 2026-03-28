@@ -10,11 +10,12 @@ import membershipsRouter from './routes/memberships'
 import paymentsRouter from './routes/payments'
 import checkinsRouter from './routes/checkins'
 import dashboardRouter from './routes/dashboard'
-import plansRouter from "@/routes/plans";
+import plansRouter from './routes/plans'
+import staffRouter from './routes/staff'
+import branchesRouter from './routes/branch-settings'
 
 const app = new Hono()
 
-//Middleware global
 app.use('*', logger)
 app.onError(errorHandler)
 
@@ -24,7 +25,7 @@ app.use('*', cors({
 }))
 
 app.on(['POST', 'GET'], '/api/auth/**', (c) => {
-    return auth.handler(c.req.raw)
+  return auth.handler(c.req.raw)
 })
 
 app.route('/api/clients', clientsRouter)
@@ -33,11 +34,13 @@ app.route('/api/payments', paymentsRouter)
 app.route('/api/checkins', checkinsRouter)
 app.route('/api/dashboard', dashboardRouter)
 app.route('/api/plans', plansRouter)
+app.route('/api/staff', staffRouter)
+app.route('/api/branches', branchesRouter)
 
 app.get('/', (c) => {
-    return c.json({ message: 'Gym System API is running' })
+  return c.json({ message: 'Gym System API is running' })
 })
 
 serve({ fetch: app.fetch, port: 3000 }, (info) => {
-    console.log(`🏋️ API running on http://localhost:${info.port}`)
+  console.log(`🏋️ API running on http://localhost:${info.port}`)
 })
