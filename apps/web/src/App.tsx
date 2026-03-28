@@ -9,6 +9,7 @@ import DashboardLayout from '@/layouts/DashboardLayout'
 import PaymentsPage from '@/pages/PaymentsPage'
 import CheckInPage from '@/pages/CheckInPage'
 import PlansPage from '@/pages/PlansPage'
+import SettingsPage from '@/pages/SettingsPage'
 
 function App() {
     return (
@@ -76,12 +77,22 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-                <Route
+<Route
                     path="/plans"
                     element={
                         <ProtectedRoute>
                             <DashboardLayout>
                                 <PlansPage />
+                            </DashboardLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute>
+                            <DashboardLayout>
+                                <SettingsPage />
                             </DashboardLayout>
                         </ProtectedRoute>
                     }

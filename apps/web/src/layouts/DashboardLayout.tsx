@@ -25,6 +25,7 @@ const navigation = [
     { name: 'Pagos',       path: '/payments',     icon: Banknote,        roles: ['owner', 'receptionist'] },
     { name: 'Check-in',    path: '/checkin',      icon: ScanLine,        roles: ['owner', 'receptionist'] },
     { name: 'Planes',      path: '/plans',        icon: Package,         roles: ['owner'] },
+    { name: 'Configuración', path: '/settings',    icon: Settings,        roles: ['owner'] },
 ]
 
 const roleLabels: Record<string, string> = {

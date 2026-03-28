@@ -8,100 +8,77 @@ const dashboardRouter = new Hono()
 dashboardRouter.use('*', requireAuth)
 
 dashboardRouter.get('/', requireRole('owner', 'receptionist'), async (c) => {
-  const user = c.get('user') as { role: string }
+  const user = (c as any).get('user') as { role: string }
   const now = new Date()
   const todayStart = new Date(now)
   todayStart.setHours(0, 0, 0, 0)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  // Datos que ambos roles ven
-  const [clientsCount] = await db
-    .select({ count: count() })
-    .from(clients)
-    .where(eq(clients.isActive, true))
+  const isOwner = user.role === 'owner'
 
-  const activeMemberships = await db
-    .select({ id: memberships.id, endDate: memberships.endDate })
-    .from(memberships)
-    .where(eq(memberships.isActive, true))
-
-  const activeCount = activeMemberships.filter(
-    (m) => new Date(m.endDate) >= now
-  ).length
-
-  const expiredCount = activeMemberships.filter(
-    (m) => new Date(m.endDate) < now
-  ).length
-
-  const [todayCheckIns] = await db
-    .select({ count: count() })
-    .from(checkIns)
-    .where(gte(checkIns.createdAt, todayStart))
-
-  const recentCheckIns = await db
-    .select({
+  // Todas las queries en paralelo
+  const queries: Promise<any>[] = [
+    db.select({ count: count() }).from(clients).where(eq(clients.isActive, true)),
+    db.select({ id: memberships.id, endDate: memberships.endDate }).from(memberships).where(eq(memberships.isActive, true)),
+    db.select({ count: count() }).from(checkIns).where(gte(checkIns.createdAt, todayStart)),
+    db.select({
       id: checkIns.id,
       createdAt: checkIns.createdAt,
       clientFirstName: clients.firstName,
       clientLastName: clients.lastName,
       branchName: branches.name,
-    })
-    .from(checkIns)
-    .leftJoin(clients, eq(checkIns.clientId, clients.id))
-    .leftJoin(branches, eq(checkIns.branchId, branches.id))
-    .orderBy(desc(checkIns.createdAt))
-    .limit(5)
+    }).from(checkIns)
+      .leftJoin(clients, eq(checkIns.clientId, clients.id))
+      .leftJoin(branches, eq(checkIns.branchId, branches.id))
+      .orderBy(desc(checkIns.createdAt))
+      .limit(5),
+  ]
 
-  // Datos base para recepcionista
+  if (isOwner) {
+    queries.push(
+      db.select({ amount: payments.amount }).from(payments).where(gte(payments.createdAt, todayStart)),
+      db.select({ amount: payments.amount }).from(payments).where(gte(payments.createdAt, monthStart)),
+      db.select({
+        id: payments.id,
+        amount: payments.amount,
+        method: payments.method,
+        createdAt: payments.createdAt,
+        clientFirstName: clients.firstName,
+        clientLastName: clients.lastName,
+      }).from(payments)
+        .leftJoin(clients, eq(payments.clientId, clients.id))
+        .orderBy(desc(payments.createdAt))
+        .limit(5),
+    )
+  }
+
+  const results = await Promise.all(queries)
+
+  const activeCount = results[1].filter((m: any) => new Date(m.endDate) >= now).length
+  const expiredCount = results[1].filter((m: any) => new Date(m.endDate) < now).length
+
   const baseData = {
-    totalClients: clientsCount.count,
+    totalClients: results[0][0].count,
     activeMemberships: activeCount,
     expiredMemberships: expiredCount,
-    todayCheckIns: todayCheckIns.count,
-    recentCheckIns,
+    todayCheckIns: results[2][0].count,
+    recentCheckIns: results[3],
     role: user.role,
   }
 
-  // Si es recepcionista, devolver solo datos operativos
-  if (user.role === 'receptionist') {
+  if (!isOwner) {
     return c.json(baseData)
   }
 
-  // Si es owner, agregar datos financieros
-  const todayPayments = await db
-    .select({ amount: payments.amount })
-    .from(payments)
-    .where(gte(payments.createdAt, todayStart))
-
-  const todayIncome = todayPayments.reduce((sum, p) => sum + p.amount, 0)
-
-  const monthPayments = await db
-    .select({ amount: payments.amount })
-    .from(payments)
-    .where(gte(payments.createdAt, monthStart))
-
-  const monthIncome = monthPayments.reduce((sum, p) => sum + p.amount, 0)
-
-  const recentPayments = await db
-    .select({
-      id: payments.id,
-      amount: payments.amount,
-      method: payments.method,
-      createdAt: payments.createdAt,
-      clientFirstName: clients.firstName,
-      clientLastName: clients.lastName,
-    })
-    .from(payments)
-    .leftJoin(clients, eq(payments.clientId, clients.id))
-    .orderBy(desc(payments.createdAt))
-    .limit(5)
+  const todayPayments = results[4]
+  const monthPayments = results[5]
 
   return c.json({
     ...baseData,
-    todayIncome,
-    monthIncome,
+    todayIncome: todayPayments.reduce((sum: number, p: any) => sum + p.amount, 0),
+    monthIncome: monthPayments.reduce((sum: number, p: any) => sum + p.amount, 0),
     todayPaymentsCount: todayPayments.length,
-    recentPayments,
+    recentPayments: results[6],
   })
 })
 
