@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, useSearchParams, useLocation} from 'react-router'
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { getClientProfile, type ClientProfile } from '@/services/clients'
+import { getClientProfile, updateClient, type ClientProfile } from '@/services/clients'
 import { getPlans, getBranches, createMembership, type MembershipPlan, type Branch } from '@/services/memberships'
 import { createPayment } from '@/services/payments'
 
@@ -34,6 +34,14 @@ export default function ClientProfilePage() {
     )
     const [plans, setPlans] = useState<MembershipPlan[]>([])
     const [branches, setBranches] = useState<Branch[]>([])
+    const [editingClient, setEditingClient] = useState(false)
+    const [savingClient, setSavingClient] = useState(false)
+    const [editForm, setEditForm] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+    })
 
     // Estado del formulario de membresía + pago
     const [showMembershipForm, setShowMembershipForm] = useState(false)
@@ -56,6 +64,16 @@ export default function ClientProfilePage() {
         paymentMethod: 'cash',
 
     })
+    useEffect(() => {
+        if (profile) {
+            setEditForm({
+                firstName: profile.client.firstName,
+                lastName: profile.client.lastName,
+                email: profile.client.email ?? '',
+                phone: profile.client.phone ?? '',
+            })
+        }
+    }, [profile])
 
     const selectedPlan = plans.find((p) => p.id === form.planId)
 
@@ -79,6 +97,21 @@ export default function ClientProfilePage() {
     useEffect(() => {
         loadProfile()
     }, [id])
+
+    const handleUpdateClient = async () => {
+        if (!id || !editForm.firstName || !editForm.lastName) return
+        setSavingClient(true)
+
+        try {
+            await updateClient(id, editForm)
+            setEditingClient(false)
+            await loadProfile()
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setSavingClient(false)
+        }
+    }
 
     const handleAssignMembership = async () => {
         if (!id || !form.planId || !selectedPlan) return
@@ -150,19 +183,71 @@ export default function ClientProfilePage() {
             {/* Datos personales */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Datos personales</CardTitle>
+                    <div className="flex items-center justify-between">
+                        <CardTitle>Datos personales</CardTitle>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingClient(!editingClient)}
+                        >
+                            {editingClient ? 'Cancelar' : 'Editar'}
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span className="text-muted-foreground">Email:</span>{' '}
-                            {client.email ?? 'No registrado'}
+                    {editingClient ? (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Nombre *</Label>
+                                <input
+                                    value={editForm.firstName}
+                                    onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Apellido *</Label>
+                                <input
+                                    value={editForm.lastName}
+                                    onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <input
+                                    type="email"
+                                    value={editForm.email}
+                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Teléfono</Label>
+                                <input
+                                    value={editForm.phone}
+                                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <Button onClick={handleUpdateClient} disabled={savingClient}>
+                                    {savingClient ? 'Guardando...' : 'Guardar cambios'}
+                                </Button>
+                            </div>
                         </div>
-                        <div>
-                            <span className="text-muted-foreground">Teléfono:</span>{' '}
-                            {client.phone ?? 'No registrado'}
+                    ) : (
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-muted-foreground">Email:</span>{' '}
+                                {client.email ?? 'No registrado'}
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Teléfono:</span>{' '}
+                                {client.phone ?? 'No registrado'}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </CardContent>
             </Card>
 

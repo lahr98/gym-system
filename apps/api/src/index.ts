@@ -3,6 +3,8 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { auth } from './lib/auth'
+import { logger } from './middleware/logger'
+import { errorHandler } from './middleware/error-handler'
 import clientsRouter from './routes/clients'
 import membershipsRouter from './routes/memberships'
 import paymentsRouter from './routes/payments'
@@ -12,9 +14,13 @@ import plansRouter from "@/routes/plans";
 
 const app = new Hono()
 
+//Middleware global
+app.use('*', logger)
+app.onError(errorHandler)
+
 app.use('*', cors({
-    origin: 'http://localhost:5173',
-    credentials: true,
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  credentials: true,
 }))
 
 app.on(['POST', 'GET'], '/api/auth/**', (c) => {

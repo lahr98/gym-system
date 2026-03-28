@@ -4,8 +4,9 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import postgres from 'postgres'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import * as authSchema from '../auth-schema'
+import { getRequiredEnv } from './env'
 
-const client = postgres(process.env.DATABASE_URL!)
+const client = postgres(getRequiredEnv('DATABASE_URL'))
 const db = drizzle(client)
 
 export const auth = betterAuth({
@@ -16,7 +17,7 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
-    trustedOrigins: ['http://localhost:5173'],
+    trustedOrigins: ['http://localhost:5173', 'http://localhost:5174'],
     user: {
         additionalFields: {
             role: {

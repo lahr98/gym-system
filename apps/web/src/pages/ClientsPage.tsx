@@ -19,6 +19,19 @@ import {
     type Client,
     type CreateClientData,
 } from '@/services/clients'
+import { UserPlus, Eye, Trash2, Filter, X } from 'lucide-react'
+
+function getInitials(firstName: string, lastName: string) {
+    return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
+}
+
+function Avatar({ firstName, lastName }: { firstName: string; lastName: string }) {
+    return (
+        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+            {getInitials(firstName, lastName)}
+        </div>
+    )
+}
 
 export default function ClientsPage() {
     const navigate = useNavigate()
@@ -52,11 +65,10 @@ export default function ClientsPage() {
     const handleSubmit = async () => {
         if (!form.firstName || !form.lastName) return
         setSaving(true)
-
         try {
             const newClient = await createClient(form)
-            navigate(`/clients/${newClient.id}?assign=true`,{
-                state: { cliente: newClient }
+            navigate(`/clients/${newClient.id}?assign=true`, {
+                state: { cliente: newClient },
             })
         } catch (err) {
             console.error(err)
@@ -67,7 +79,6 @@ export default function ClientsPage() {
 
     const handleDeactivate = async (id: string) => {
         if (!confirm('¿Desactivar este cliente?')) return
-
         try {
             await deleteClient(id)
             await loadClients()
@@ -78,8 +89,12 @@ export default function ClientsPage() {
 
     const filtered = clients.filter((c) => {
         const fullName = `${c.firstName} ${c.lastName}`.toLowerCase()
-        return fullName.includes(search.toLowerCase())
+        const email = (c.email ?? '').toLowerCase()
+        const q = search.toLowerCase()
+        return fullName.includes(q) || email.includes(q)
     })
+
+    const hasFilters = search.length > 0
 
     if (loading) {
         return <p className="text-muted-foreground">Cargando clientes...</p>
@@ -87,10 +102,26 @@ export default function ClientsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Clientes</h1>
-                <Button onClick={() => setShowForm(!showForm)}>
-                    {showForm ? 'Cancelar' : 'Nuevo cliente'}
+            {/* Page header */}
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Clientes</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Gestiona la base de datos de tus socios y sus estados.
+                    </p>
+                </div>
+                <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+                    {showForm ? (
+                        <>
+                            <X className="w-4 h-4" />
+                            Cancelar
+                        </>
+                    ) : (
+                        <>
+                            <UserPlus className="w-4 h-4" />
+                            Nuevo Cliente
+                        </>
+                    )}
                 </Button>
             </div>
 
@@ -143,63 +174,115 @@ export default function ClientsPage() {
                 </Card>
             )}
 
-            {/* Buscador */}
-            <Input
-                placeholder="Buscar por nombre..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="max-w-sm"
-            />
+            {/* Filtros */}
+            <Card>
+                <CardContent className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">
+                            <Filter className="w-3.5 h-3.5" />
+                            Filtros:
+                        </div>
+                        <Input
+                            placeholder="Buscar por nombre o email..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="max-w-xs h-9 text-sm"
+                        />
+                        {hasFilters && (
+                            <button
+                                onClick={() => setSearch('')}
+                                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium transition-colors ml-auto"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                                Limpiar filtros
+                            </button>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
-            {/* Tabla de clientes */}
-            {filtered.length === 0 ? (
-                <p className="text-muted-foreground">No hay clientes registrados.</p>
-            ) : (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Teléfono</TableHead>
-                            <TableHead>Registro</TableHead>
-                            <TableHead>Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filtered.map((client) => (
-                            <TableRow key={client.id}>
-                                <TableCell className="font-medium">
+            {/* Tabla */}
+            <Card>
+                <CardContent className="p-0">
+                    {filtered.length === 0 ? (
+                        <div className="py-12 text-center text-muted-foreground text-sm">
+                            {hasFilters ? 'No hay clientes que coincidan con la búsqueda.' : 'No hay clientes registrados.'}
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="pl-6">Cliente</TableHead>
+                                    <TableHead>Teléfono</TableHead>
+                                    <TableHead>Registro</TableHead>
+                                    <TableHead className="text-right pr-6">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filtered.map((client) => (
+                                    <TableRow key={client.id} className="group">
+                                        <TableCell className="pl-6">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar firstName={client.firstName} lastName={client.lastName} />
+                                                <div>
+                                                    <button
+                                                        onClick={() =>
+                                                            navigate(`/clients/${client.id}`, {
+                                                                state: { client },
+                                                            })
+                                                        }
+                                                        className="font-medium text-sm hover:text-primary transition-colors text-left"
+                                                    >
+                                                        {client.firstName} {client.lastName}
+                                                    </button>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {client.email ?? '—'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {client.phone ?? '—'}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {new Date(client.createdAt).toLocaleDateString('es-MX')}
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <button
+                                                    onClick={() =>
+                                                        navigate(`/clients/${client.id}`, {
+                                                            state: { client },
+                                                        })
+                                                    }
+                                                    className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                                                    title="Ver perfil"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeactivate(client.id)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                                    title="Desactivar cliente"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
 
-                                    <a href={`/clients/${client.id}`}
-                                    onClick={(e) => {
-                                    e.preventDefault()
-                                    navigate(`/clients/${client.id}`,{
-                                        state: {client }
-                                    })
-                                }}
-                                    className="text-primary underline hover:no-underline cursor-pointer"
-                                    >
-                                    {client.firstName} {client.lastName}
-                                </a>
-                            </TableCell>
-                                <TableCell>{client.email ?? '—'}</TableCell>
-                                <TableCell>{client.phone ?? '—'}</TableCell>
-                                <TableCell>
-                                    {new Date(client.createdAt).toLocaleDateString('es-MX')}
-                                </TableCell>
-                                <TableCell>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleDeactivate(client.id)}
-                                    >
-                                        Desactivar
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+            {/* Footer count */}
+            {filtered.length > 0 && (
+                <p className="text-xs text-muted-foreground px-1">
+                    Mostrando <span className="font-medium text-foreground">{filtered.length}</span> de{' '}
+                    <span className="font-medium text-foreground">{clients.length}</span> clientes
+                </p>
             )}
         </div>
     )

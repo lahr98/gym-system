@@ -12,6 +12,7 @@ import {
     deleteMembership, type Membership, type MembershipPlan, type Branch,
 } from '@/services/memberships'
 import { getClients, type Client } from '@/services/clients'
+import { Plus, X, Trash2 } from 'lucide-react'
 
 function formatPrice(cents: number): string {
     return `$${(cents / 100).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
@@ -61,7 +62,6 @@ export default function MembershipsPage() {
         if (!form.clientId || !form.planId) return
         if (!selectedPlan?.multiBranch && !form.branchId) return
         setSaving(true)
-
         try {
             await createMembership({
                 clientId: form.clientId,
@@ -100,15 +100,28 @@ export default function MembershipsPage() {
         return <p className="text-muted-foreground">Cargando membresías...</p>
     }
 
+    const selectClass = 'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring'
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Membresías</h1>
-                <Button onClick={() => setShowForm(!showForm)}>
-                    {showForm ? 'Cancelar' : 'Nueva membresía'}
+            {/* Page header */}
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Membresías</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Asigna y gestiona las membresías de tus clientes.
+                    </p>
+                </div>
+                <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+                    {showForm ? (
+                        <><X className="w-4 h-4" /> Cancelar</>
+                    ) : (
+                        <><Plus className="w-4 h-4" /> Nueva membresía</>
+                    )}
                 </Button>
             </div>
 
+            {/* Formulario */}
             {showForm && (
                 <Card>
                     <CardHeader>
@@ -121,7 +134,7 @@ export default function MembershipsPage() {
                                 <select
                                     value={form.clientId}
                                     onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    className={selectClass}
                                 >
                                     <option value="">Seleccionar cliente</option>
                                     {clients.map((c) => (
@@ -137,7 +150,7 @@ export default function MembershipsPage() {
                                 <select
                                     value={form.planId}
                                     onChange={(e) => setForm({ ...form, planId: e.target.value })}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    className={selectClass}
                                 >
                                     <option value="">Seleccionar plan</option>
                                     {plans.map((p) => (
@@ -163,7 +176,7 @@ export default function MembershipsPage() {
                                     <select
                                         value={form.branchId}
                                         onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        className={selectClass}
                                     >
                                         <option value="">Seleccionar sucursal</option>
                                         {branches.map((b) => (
@@ -183,9 +196,9 @@ export default function MembershipsPage() {
                         </div>
 
                         {selectedPlan && (
-                            <div className="mt-4 p-3 rounded-md bg-accent">
-                                <p className="text-sm font-medium">
-                                    Resumen: {selectedPlan.name} — {formatPrice(selectedPlan.price)} — {selectedPlan.durationDays} días
+                            <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                                <p className="text-sm font-medium text-primary">
+                                    {selectedPlan.name} — {formatPrice(selectedPlan.price)} — {selectedPlan.durationDays} días
                                 </p>
                             </div>
                         )}
@@ -197,58 +210,65 @@ export default function MembershipsPage() {
                 </Card>
             )}
 
-            {memberships.length === 0 ? (
-                <p className="text-muted-foreground">No hay membresías activas.</p>
-            ) : (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Plan</TableHead>
-                            <TableHead>Precio</TableHead>
-                            <TableHead>Sucursal</TableHead>
-                            <TableHead>Inicio</TableHead>
-                            <TableHead>Vencimiento</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead>Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {memberships.map((m) => (
-                            <TableRow key={m.id}>
-                                <TableCell className="font-medium">
-                                    {m.clientFirstName} {m.clientLastName}
-                                </TableCell>
-                                <TableCell>{m.planName ?? '—'}</TableCell>
-                                <TableCell>{m.planPrice ? formatPrice(m.planPrice) : '—'}</TableCell>
-                                <TableCell>{m.multiBranch ? 'Ambas' : m.branchName ?? '—'}</TableCell>
-                                <TableCell>
-                                    {new Date(m.startDate).toLocaleDateString('es-MX')}
-                                </TableCell>
-                                <TableCell>
-                                    {new Date(m.endDate).toLocaleDateString('es-MX')}
-                                </TableCell>
-                                <TableCell>
-                                    {isExpired(m.endDate) ? (
-                                        <Badge variant="destructive">Vencida</Badge>
-                                    ) : (
-                                        <Badge variant="default">Activa</Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleDeactivate(m.id)}
-                                    >
-                                        Desactivar
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            )}
+            {/* Tabla */}
+            <Card>
+                <CardContent className="p-0">
+                    {memberships.length === 0 ? (
+                        <div className="py-12 text-center text-muted-foreground text-sm">
+                            No hay membresías activas.
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="pl-6">Cliente</TableHead>
+                                    <TableHead>Plan</TableHead>
+                                    <TableHead>Precio</TableHead>
+                                    <TableHead>Sucursal</TableHead>
+                                    <TableHead>Vencimiento</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                    <TableHead className="text-right pr-6">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {memberships.map((m) => (
+                                    <TableRow key={m.id}>
+                                        <TableCell className="pl-6 font-medium text-sm">
+                                            {m.clientFirstName} {m.clientLastName}
+                                        </TableCell>
+                                        <TableCell className="text-sm">{m.planName ?? '—'}</TableCell>
+                                        <TableCell className="text-sm font-semibold">
+                                            {m.planPrice ? formatPrice(m.planPrice) : '—'}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {m.multiBranch ? 'Ambas' : m.branchName ?? '—'}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {new Date(m.endDate).toLocaleDateString('es-MX')}
+                                        </TableCell>
+                                        <TableCell>
+                                            {isExpired(m.endDate) ? (
+                                                <Badge variant="destructive">Vencida</Badge>
+                                            ) : (
+                                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Activa</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6">
+                                            <button
+                                                onClick={() => handleDeactivate(m.id)}
+                                                className="w-8 h-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                                title="Desactivar"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     )
 }

@@ -10,6 +10,7 @@ import {
 import {
     getPlans, createPlan, updatePlan, togglePlan, type Plan, type CreatePlanData,
 } from '@/services/plans'
+import { Plus, X, Pencil } from 'lucide-react'
 
 function formatPrice(cents: number): string {
     return `$${(cents / 100).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
@@ -74,7 +75,6 @@ export default function PlansPage() {
     const handleSubmit = async () => {
         if (!form.name || !form.durationDays || !form.price) return
         setSaving(true)
-
         try {
             if (editingId) {
                 await updatePlan(editingId, form)
@@ -105,19 +105,24 @@ export default function PlansPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Planes de membresía</h1>
-                <Button onClick={() => {
-                    if (showForm) {
-                        resetForm()
-                    } else {
-                        setShowForm(true)
-                    }
-                }}>
-                    {showForm ? 'Cancelar' : 'Nuevo plan'}
+            {/* Page header */}
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Planes de membresía</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Configura los planes disponibles para tus clientes.
+                    </p>
+                </div>
+                <Button onClick={() => { showForm ? resetForm() : setShowForm(true) }} className="gap-2">
+                    {showForm ? (
+                        <><X className="w-4 h-4" /> Cancelar</>
+                    ) : (
+                        <><Plus className="w-4 h-4" /> Nuevo plan</>
+                    )}
                 </Button>
             </div>
 
+            {/* Formulario */}
             {showForm && (
                 <Card>
                     <CardHeader>
@@ -133,7 +138,6 @@ export default function PlansPage() {
                                     placeholder="Ej: Mensualidad"
                                 />
                             </div>
-
                             <div className="space-y-2">
                                 <Label>Duración (días) *</Label>
                                 <Input
@@ -143,7 +147,6 @@ export default function PlansPage() {
                                     placeholder="30"
                                 />
                             </div>
-
                             <div className="space-y-2">
                                 <Label>Precio (MXN) *</Label>
                                 <Input
@@ -154,7 +157,6 @@ export default function PlansPage() {
                                     placeholder="550.00"
                                 />
                             </div>
-
                             <div className="flex items-end gap-3 pb-1">
                                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                                     <input
@@ -169,8 +171,8 @@ export default function PlansPage() {
                         </div>
 
                         {form.name && form.price > 0 && (
-                            <div className="mt-4 p-3 rounded-md bg-accent">
-                                <p className="text-sm font-medium">
+                            <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                                <p className="text-sm font-medium text-primary">
                                     {form.name} — {formatPrice(form.price)} — {form.durationDays} días
                                     {form.multiBranch ? ' — Multi-sucursal' : ''}
                                 </p>
@@ -184,55 +186,69 @@ export default function PlansPage() {
                 </Card>
             )}
 
-            {plans.length === 0 ? (
-                <p className="text-muted-foreground">No hay planes registrados.</p>
-            ) : (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Duración</TableHead>
-                            <TableHead>Precio</TableHead>
-                            <TableHead>Sucursales</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead>Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {plans.map((plan) => (
-                            <TableRow key={plan.id} className={!plan.isActive ? 'opacity-50' : ''}>
-                                <TableCell className="font-medium">{plan.name}</TableCell>
-                                <TableCell>{plan.durationDays} días</TableCell>
-                                <TableCell>{formatPrice(plan.price)}</TableCell>
-                                <TableCell>{plan.multiBranch ? 'Ambas' : 'Una'}</TableCell>
-                                <TableCell>
-                                    <Badge variant={plan.isActive ? 'default' : 'secondary'}>
-                                        {plan.isActive ? 'Activo' : 'Inactivo'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleEdit(plan)}
-                                        >
-                                            Editar
-                                        </Button>
-                                        <Button
-                                            variant={plan.isActive ? 'destructive' : 'default'}
-                                            size="sm"
-                                            onClick={() => handleToggle(plan.id)}
-                                        >
-                                            {plan.isActive ? 'Desactivar' : 'Activar'}
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            )}
+            {/* Tabla */}
+            <Card>
+                <CardContent className="p-0">
+                    {plans.length === 0 ? (
+                        <div className="py-12 text-center text-muted-foreground text-sm">
+                            No hay planes registrados.
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="pl-6">Nombre</TableHead>
+                                    <TableHead>Duración</TableHead>
+                                    <TableHead>Precio</TableHead>
+                                    <TableHead>Sucursales</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                    <TableHead className="text-right pr-6">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {plans.map((plan) => (
+                                    <TableRow key={plan.id} className={!plan.isActive ? 'opacity-50' : ''}>
+                                        <TableCell className="pl-6 font-medium text-sm">{plan.name}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{plan.durationDays} días</TableCell>
+                                        <TableCell className="text-sm font-semibold">{formatPrice(plan.price)}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {plan.multiBranch ? 'Ambas' : 'Una'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                className={plan.isActive
+                                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                                                    : ''}
+                                                variant={plan.isActive ? 'default' : 'secondary'}
+                                            >
+                                                {plan.isActive ? 'Activo' : 'Inactivo'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <button
+                                                    onClick={() => handleEdit(plan)}
+                                                    className="w-8 h-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                                <Button
+                                                    variant={plan.isActive ? 'destructive' : 'default'}
+                                                    size="sm"
+                                                    onClick={() => handleToggle(plan.id)}
+                                                >
+                                                    {plan.isActive ? 'Desactivar' : 'Activar'}
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     )
 }

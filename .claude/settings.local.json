@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls:*)",
+      "Bash(xargs wc:*)",
+      "Bash(find c:Luisgym-system -type f -name *.test.ts -o -name *.spec.ts)",
+      "Bash(grep -r \"ENV\\\\|env\\\\|hardcod\" c:Luisgym-systemappswebsrcservices --include=*.ts)"
+    ]
+  }
+}

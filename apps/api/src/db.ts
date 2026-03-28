@@ -2,12 +2,13 @@ import 'dotenv/config'
 import postgres from 'postgres'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { pgTable, uuid, text, timestamp, boolean, integer, pgEnum } from 'drizzle-orm/pg-core'
+import { getRequiredEnv } from './lib/env'
 
 // ============================================
 // Conexión
 // ============================================
 
-const client = postgres(process.env.DATABASE_URL!)
+const client = postgres(getRequiredEnv('DATABASE_URL'))
 export const db = drizzle(client)
 
 // ============================================

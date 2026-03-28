@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router'
@@ -9,6 +9,14 @@ export default function LoginPage() {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
+
+    const { data: session, isPending } = authClient.useSession()
+
+    useEffect(() => {
+        if (session && !isPending) {
+            navigate('/dashboard')
+        }
+    }, [session, isPending])
 
     const handleLogin = async () => {
         setError('')
